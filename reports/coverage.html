@@ -1,0 +1,4229 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Tests &amp; Coverage</title>
+    <script>
+      headings = [];
+    
+      onload = function () {
+          headings = document.querySelectorAll('h2');
+          reset();
+      };
+    
+      onscroll = function (e) {
+          var heading = find(window.scrollY);
+          if (!heading) {
+            var current = document.querySelector('#menu a.active');
+            if (current) {
+              current.className = '';
+            }
+            return;
+          }
+          var links = document.querySelectorAll('#menu a')
+                  , link;
+    
+          for (var i = 0, len = links.length; i < len; ++i) {
+              link = links[i];
+              link.className = link.getAttribute('href') == '#' + heading.id ? 'active' : '';
+          }
+      };
+    
+      function find (y) {
+          var i = headings.length
+                  , heading;
+    
+          while (i--) {
+              heading = headings[i];
+              if (y >= heading.offsetTop) {
+                  return heading;
+              }
+          }
+      }
+    
+      function toggle (className) {
+    
+          var elements = document.getElementsByClassName(className);
+    
+          for (var i = 0, il = elements.length; i < il; ++i) {
+              var element = elements[i];
+    
+              if (element.classList.contains('hide')) {
+                  element.classList.remove('hide');
+                  element.classList.add('show');
+              }
+              else {
+                  element.classList.remove('show');
+                  element.classList.add('hide');
+              }
+          };
+      }
+    
+      function reset () {
+    
+          var shownElements = document.getElementsByClassName('show');
+          var filterElements = document.querySelectorAll('input[type=checkbox]');
+    
+          for (var i = 0, il = filterElements.length; i < il; ++i) {
+              filterElements[i].checked = false;
+          }
+    
+          // Check any filters with visible elements
+          for (i = 0, il = shownElements.length; i < il; ++i) {
+              var shownElement = shownElements[i];
+              var classNames = shownElement.className.split(' ');
+              for (var ci = 0, cl = classNames.length; ci < cl; ++ci){
+                  var element = document.getElementById('show-' + classNames[ci]);
+                  if (element) {
+                      element.checked = true;
+                  }
+              }
+          }
+      };
+    
+      function filter (element) {
+    
+          toggle(element.value);
+          reset();
+      }
+    </script>
+    <style>
+        body {
+            font: 14px/1.6 Helvetica, Arial, sans-serif;
+            margin: 0;
+            color: #2c2c2c;
+        }
+    
+        #tests, #coverage, #linting {
+            padding: 60px;
+        }
+    
+        h1 a:hover {
+            text-decoration: none;
+        }
+    
+        h2 {
+            width: 80%;
+            margin-top: 80px;
+            margin-bottom: 0;
+            font-weight: 100;
+            letter-spacing: 1px;
+        }
+    
+        ul {
+            margin-top: 20px;
+            padding: 0 15px;
+            width: 100%;
+        }
+    
+        ul li {
+            float: left;
+            width: 40%;
+            margin-top: 5px;
+            margin-right: 60px;
+            list-style: none;
+            padding: 5px 0;
+            font-size: 12px;
+        }
+    
+        #menu {
+            position: fixed;
+            font-size: 12px;
+            overflow-y: auto;
+            top: 0;
+            right: 0;
+            margin: 0;
+            height: 100%;
+            padding: 15px 15px;
+            border-left: 1px solid #eee;
+            background-color: #666;
+            z-index: 1;
+        }
+    
+        #menu::after {
+            display: block;
+            content: '';
+            padding-top: 80px;
+        }
+    
+        #menu li a {
+            display: block;
+            color: white;
+            padding: 0 5px 0 35px;
+            transition: background 300ms;
+            text-decoration: none;
+        }
+    
+        #menu li {
+            position: relative;
+            list-style: none;
+        }
+    
+        #menu a:hover,
+        #menu a.active {
+            text-decoration: none;
+            background: rgba(255, 255, 255, .4);
+        }
+    
+        #menu li:hover .cov {
+            opacity: 1;
+        }
+    
+        #menu li .dirname {
+            opacity: .60;
+            padding-right: 2px;
+        }
+    
+        #menu li .basename {
+            opacity: 1;
+        }
+    
+        #menu .cov, #menu .lint {
+            background: rgba(0, 0, 0, .3);
+            position: absolute;
+            top: 0;
+            font-size: 9px;
+            text-align: center;
+            opacity: .8;
+            width: 22px;
+            border-radius: 10px;
+            padding: 2px 3px;
+        }
+    
+        #files .stats:nth-child(2n) {
+            display: inline-block;
+            margin-top: 15px;
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    
+        .stats div {
+            float: left;
+            padding: 0 5px;
+        }
+    
+        .stats::after {
+            display: block;
+            content: '';
+            clear: both;
+        }
+    
+        .stats .sloc::after {
+            content: ' SLOC';
+            color: #b6b6b6;
+        }
+    
+        .stats .percentage::after {
+            content: ' coverage';
+            color: #b6b6b6;
+        }
+    
+        .stats .hits::before {
+            content: '(';
+            color: #b6b6b6;
+        }
+    
+        .stats .hits::after {
+            content: ' Covered';
+            color: #b6b6b6;
+        }
+    
+        .stats .misses::after {
+            content: ' Not Covered)';
+            color: #b6b6b6;
+        }
+    
+        .stats .failures::after {
+            content: ' Failures';
+            color: #b6b6b6;
+        }
+    
+        .stats .skipped::after {
+            content: ' Skipped';
+            color: #b6b6b6;
+        }
+    
+        .stats .test-count::after {
+            content: ' Tests';
+            color: #b6b6b6;
+        }
+    
+        .stats .duration::before {
+            content: '(';
+            color: #b6b6b6;
+        }
+    
+        .stats .duration::after {
+            content: ' ms)';
+            color: #b6b6b6;
+        }
+    
+        .high {
+            color: #00d4b4;
+        }
+    
+        .medium {
+            color: #e87d0d;
+        }
+    
+        .low {
+            color: #d4081a;
+        }
+    
+        .terrible {
+            color: #d4081a;
+            font-weight: bold;
+        }
+    
+        #files table {
+            width: 80%;
+            margin-top: 10px;
+            border-collapse: collapse;
+            border: 1px solid #cbcbcb;
+            color: #363636;
+            border-radius: 3px;
+        }
+    
+        #files thead {
+            display: none;
+        }
+    
+        table td.line,
+        table td.lint,
+        table td.hits {
+            width: 20px;
+            background: #eaeaea;
+            text-align: right;
+            font-size: 11px;
+            padding: 0 10px;
+            color: #949494;
+            white-space: nowrap;
+        }
+    
+        table td.hits {
+            width: 10px;
+            padding: 2px 5px;
+            color: rgba(0, 0, 0, .2);
+            background: #f0f0f0;
+        }
+    
+        table td.sourcemaps {
+            width: 1%;
+            border-left: 1px solid #cbcbcb;
+            padding: 0 10px;
+        }
+    
+        table td.lint.empty {
+            width: 0;
+            padding: 0;
+        }
+    
+        table td.lint > span {
+            border-radius: 50%;
+            width: 8px;
+            height: 8px;
+            display: inline-block;
+            vertical-align: baseline;
+        }
+    
+        table td.lint .errors {
+            background-color: red;
+        }
+    
+        table td.lint .warnings {
+            background-color: orange;
+        }
+    
+        td.sourcemaps.file {
+            background: #f0f0f0;
+        }
+    
+        tr.miss td.line,
+        tr.miss td.hits {
+            background: #e6c3c7;
+        }
+    
+        tr.miss td {
+            background: #f8d5d8;
+        }
+    
+        td.source {
+            padding-left: 15px;
+            line-height: 15px;
+            white-space: pre;
+            font: 12px monaco, monospace;
+        }
+    
+        td.source div {
+            display: inline-block;
+        }
+    
+        td.source div.true {
+            background: #bae8bf;
+        }
+    
+        td.source div.false {
+            background: #e8e5ba;
+        }
+    
+        td.source div.never {
+            background: #f8d5d8;
+        }
+    
+        #tests table {
+            width: 80%;
+            margin-top: 10px;
+            border-collapse: collapse;
+            border: 1px solid #cbcbcb;
+            color: #363636;
+            border-radius: 3px;
+        }
+    
+        #tests thead {
+            background: #F5F5F5;
+        }
+    
+        #tests tr {
+            border: 1px solid #ccc;
+        }
+    
+        #tests td {
+            padding-left: 8px;
+            vertical-align: top;
+        }
+    
+        #tests .success:nth-child(2n) {
+            background: #F5F5F5;
+        }
+    
+        #tests .failure {
+            background: #FF9E9E;
+        }
+    
+        #tests table .skipped {
+            background: #AA82FF;
+        }
+    
+        #tests .success {
+            color: #949494;
+        }
+    
+        #tests .failure .test-title {
+            font-weight: bold;
+            margin-top: 5px;
+        }
+    
+        #tests .stack {
+            margin-top: 4px;
+            padding-left: 15px;
+            margin-bottom: 12px;
+            font: 12px monaco, monospace;
+            white-space: pre;
+            line-height: 15px;
+        }
+    
+        .hide {
+            position: absolute;
+            left: -9999em;
+        }
+    
+        .show {
+            position: relative;
+        }
+    
+        [data-tooltip] {
+            position: relative;
+        }
+    
+        [data-tooltip]:hover:before {
+            border: solid;
+            border-color: #333 transparent;
+            border-width: 6px 6px 0 6px;
+            bottom: 20px;
+            content: "";
+            left: 0;
+            position: absolute;
+            z-index: 99;
+        }
+    
+        [data-tooltip]:hover:after {
+            background: #333;
+            background: rgba(0, 0, 0, .8);
+            border-radius: 5px;
+            bottom: 26px;
+            color: #fff;
+            left: -10px;
+            padding: 5px 15px;
+            position: absolute;
+            z-index: 98;
+            content: attr(data-tooltip);
+            white-space: pre;
+            text-align: left;
+        }
+    
+        .line[data-tooltip]:hover:after {
+            content: "Line number";
+        }
+    
+        .hits[data-tooltip]:hover:after {
+            content: "Number of hits";
+        }
+    
+        .miss .source[data-tooltip]:hover:after {
+            content: "Missed line";
+        }
+    
+        .miss.true[data-tooltip]:hover:after {
+            content: "Condition always true";
+        }
+    
+        .miss.false[data-tooltip]:hover:after {
+            content: "Condition always false";
+        }
+    
+        .miss.never[data-tooltip]:hover:after {
+            content: "Statement never reached";
+        }
+    
+        .sourcemaps.file[data-tooltip]:hover:after {
+            content: "Original file";
+        }
+    
+        .sourcemaps.line[data-tooltip]:hover:after {
+            content: "Original line";
+        }
+    
+        .lint .errors[data-tooltip]:hover:after {
+            content: "Linting errors:\A" attr(data-tooltip);
+        }
+    
+        .lint .warnings[data-tooltip]:hover:after {
+            content: "Linting warnings:\A" attr(data-tooltip);
+        }
+    
+        #filters {
+            width: 75%;
+            margin-top: 25px;
+        }
+    
+        #filters label {
+            margin-right: 10px;
+        }
+    
+        .lint-stats .lint-errors::after {
+            content: ' linting errors';
+            color: #b6b6b6;
+        }
+    
+        .lint-stats .lint-warnings::after {
+            content: ' linting warnings';
+            color: #b6b6b6;
+        }
+    
+        .lint-entry {
+            color: #b6b6b6;
+            float: none;
+            padding: 0;
+        }
+    
+        .lint-entry .level-ERROR {
+            color: #d4081a;
+        }
+    
+        .lint-entry .level-WARNING {
+            color: #e87d0d;
+        }
+    </style>
+  </head>
+  <body>
+    <div id="menu">
+        <li><a href="#tests">Test Report</a></li>
+        <li><a href="#coverage">Coverage Report</a></li>
+        <li>
+            <span class="cov high">100</span>
+            <a href="#index.js"><span class="basename">index.js</span></a>
+        </li>
+        <li>
+            <span class="cov high">100</span>
+            <a href="#lib/curry.js"><span class="dirname">lib/</span><span class="basename">curry.js</span></a>
+        </li>
+        <li>
+            <span class="cov medium">72.73</span>
+            <a href="#lib/filter.js"><span class="dirname">lib/</span><span class="basename">filter.js</span></a>
+        </li>
+        <li>
+            <span class="cov high">100</span>
+            <a href="#lib/matches.js"><span class="dirname">lib/</span><span class="basename">matches.js</span></a>
+        </li>
+        <li>
+            <span class="cov high">100</span>
+            <a href="#lib/operators.js"><span class="dirname">lib/</span><span class="basename">operators.js</span></a>
+        </li>
+        <li>
+            <span class="cov high">100</span>
+            <a href="#lib/parser.js"><span class="dirname">lib/</span><span class="basename">parser.js</span></a>
+        </li>
+        <li>
+            <span class="cov high">100</span>
+            <a href="#lib/preparers.js"><span class="dirname">lib/</span><span class="basename">preparers.js</span></a>
+        </li>
+        <li>
+            <span class="cov high">100</span>
+            <a href="#lib/utils.js"><span class="dirname">lib/</span><span class="basename">utils.js</span></a>
+        </li>
+        <li><a href="#linting">Linting Report</a></li>
+    </div>
+    <div id="tests">
+      <h1>Test Report</h1>
+      <div class="stats high">
+          <div class="failures">0</div>
+          <div class="skipped">0</div>
+          <div class="test-count">168</div>
+          <div class="duration">49</div>
+      </div>
+      <div id="filters">
+          <input type="checkbox" checked="" onchange="filter(this)" value="success" id="show-success">
+          <label for="show-success">Show Success</label>
+          <input type="checkbox" checked="" onchange="filter(this)" value="failure" id="show-failure">
+          <label for="show-failure">Show Failure</label>
+          <br>
+          <input type="checkbox" checked="" onchange="filter(this)" value="Basic" id="show-Basic">
+          <label for="show-Basic">Basic</label>
+          <input type="checkbox" checked="" onchange="filter(this)" value="Sift-Filter" id="show-Sift-Filter">
+          <label for="show-Sift-Filter">Sift-Filter</label>
+          <input type="checkbox" checked="" onchange="filter(this)" value="Sift" id="show-Sift">
+          <label for="show-Sift">Sift</label>
+      </div>
+      <table>
+          <thead>
+          <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Duration (ms)</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr class="show Basic success">
+              <td class="test-id">1</td>
+              <td class="test-title">Basic throws an error if the operation is invalid
+                  
+              </td>
+              <td class="test-duration">5</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">2</td>
+              <td class="test-title">Basic returns a valid matcher if not passed something to compare against
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">3</td>
+              <td class="test-title">Basic returns true for a basic match
+                  
+              </td>
+              <td class="test-duration">2</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">4</td>
+              <td class="test-title">Basic returns false for no basic match
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">5</td>
+              <td class="test-title">Basic returns true for a basic curried match
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">6</td>
+              <td class="test-title">Basic returns false for no basic curried match
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">7</td>
+              <td class="test-title">Basic can match empty objects
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">8</td>
+              <td class="test-title">Basic $ne: null returns true when field is different
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">9</td>
+              <td class="test-title">Basic $ne: null returns false when field is not present
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">10</td>
+              <td class="test-title">Basic $ne: null returns false when field is null
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">11</td>
+              <td class="test-title">Basic can be used with Array.filter to create something that looks like sift
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">12</td>
+              <td class="test-title">Basic accepts a regular expression as a filter
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">13</td>
+              <td class="test-title">Basic suports get
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">14</td>
+              <td class="test-title">Basic $eq takes function
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">15</td>
+              <td class="test-title">Basic $eq works for empty arrays
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">16</td>
+              <td class="test-title">Basic $eq works for empty arrays against false
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">17</td>
+              <td class="test-title">Basic works with multiple nested values
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Basic success">
+              <td class="test-id">18</td>
+              <td class="test-title">Basic works with multiple nested objects with values
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">19</td>
+              <td class="test-title">Sift-Filter 0: {&quot;$eq&quot;:5}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">20</td>
+              <td class="test-title">Sift-Filter 1: &quot;5&quot;
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">21</td>
+              <td class="test-title">Sift-Filter 2: false
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">22</td>
+              <td class="test-title">Sift-Filter 3: true
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">23</td>
+              <td class="test-title">Sift-Filter 4: 0
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">24</td>
+              <td class="test-title">Sift-Filter 5: null
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">25</td>
+              <td class="test-title">Sift-Filter 6: undefined
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">26</td>
+              <td class="test-title">Sift-Filter 7: 1
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">27</td>
+              <td class="test-title">Sift-Filter 8: 1
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">28</td>
+              <td class="test-title">Sift-Filter 9: &quot;1970-01-01T00:00:00.001Z&quot;
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">29</td>
+              <td class="test-title">Sift-Filter 10: {}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">30</td>
+              <td class="test-title">Sift-Filter 11: {&quot;$ne&quot;:5}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">31</td>
+              <td class="test-title">Sift-Filter 12: {&quot;$ne&quot;:&quot;5&quot;}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">32</td>
+              <td class="test-title">Sift-Filter 13: {&quot;$ne&quot;:false}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">33</td>
+              <td class="test-title">Sift-Filter 14: {}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">34</td>
+              <td class="test-title">Sift-Filter 15: {&quot;$ne&quot;:{}}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">35</td>
+              <td class="test-title">Sift-Filter 16: {&quot;$ne&quot;:1}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">36</td>
+              <td class="test-title">Sift-Filter 17: {&quot;groups&quot;:{&quot;$ne&quot;:111}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">37</td>
+              <td class="test-title">Sift-Filter 18: {&quot;$lt&quot;:5}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">38</td>
+              <td class="test-title">Sift-Filter 19: {&quot;$lt&quot;:&quot;c&quot;}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">39</td>
+              <td class="test-title">Sift-Filter 20: {&quot;$lt&quot;:null}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">40</td>
+              <td class="test-title">Sift-Filter 21: {&quot;$lt&quot;:&quot;1970-01-01T00:00:00.003Z&quot;}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">41</td>
+              <td class="test-title">Sift-Filter 22: {&quot;$lte&quot;:5}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">42</td>
+              <td class="test-title">Sift-Filter 23: {&quot;groups&quot;:{&quot;$lt&quot;:5}}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">43</td>
+              <td class="test-title">Sift-Filter 24: {&quot;$gt&quot;:5}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">44</td>
+              <td class="test-title">Sift-Filter 25: {&quot;$gt&quot;:null}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">45</td>
+              <td class="test-title">Sift-Filter 26: {&quot;groups&quot;:{&quot;$gt&quot;:5}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">46</td>
+              <td class="test-title">Sift-Filter 27: {&quot;$gte&quot;:5}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">47</td>
+              <td class="test-title">Sift-Filter 28: {&quot;groups&quot;:{&quot;$gte&quot;:5}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">48</td>
+              <td class="test-title">Sift-Filter 29: {&quot;$mod&quot;:[2,1]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">49</td>
+              <td class="test-title">Sift-Filter 30: {&quot;groups&quot;:{&quot;$mod&quot;:[2,0]}}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">50</td>
+              <td class="test-title">Sift-Filter 31: {&quot;$exists&quot;:false}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">51</td>
+              <td class="test-title">Sift-Filter 32: {&quot;$exists&quot;:true}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">52</td>
+              <td class="test-title">Sift-Filter 33: {&quot;$in&quot;:[0,false,1,&quot;1&quot;]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">53</td>
+              <td class="test-title">Sift-Filter 34: {&quot;$in&quot;:[1,&quot;1&quot;,&quot;2&quot;]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">54</td>
+              <td class="test-title">Sift-Filter 35: {&quot;$in&quot;:[&quot;1970-01-01T00:00:00.001Z&quot;]}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">55</td>
+              <td class="test-title">Sift-Filter 36: {&quot;a.b.status&quot;:{&quot;$in&quot;:[0]}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">56</td>
+              <td class="test-title">Sift-Filter 37: {&quot;a.b.status&quot;:{&quot;$in&quot;:[0,2]}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">57</td>
+              <td class="test-title">Sift-Filter 38: {&quot;$nin&quot;:[0,false,1,&quot;1&quot;]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">58</td>
+              <td class="test-title">Sift-Filter 39: {&quot;$nin&quot;:[1,&quot;1&quot;,&quot;2&quot;]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">59</td>
+              <td class="test-title">Sift-Filter 40: {&quot;$nin&quot;:[&quot;1970-01-01T00:00:00.001Z&quot;]}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">60</td>
+              <td class="test-title">Sift-Filter 41: {&quot;$not&quot;:false}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">61</td>
+              <td class="test-title">Sift-Filter 42: {&quot;$not&quot;:0}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">62</td>
+              <td class="test-title">Sift-Filter 43: {&quot;$not&quot;:{&quot;$in&quot;:[1,2,3]}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">63</td>
+              <td class="test-title">Sift-Filter 44: {}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">64</td>
+              <td class="test-title">Sift-Filter 45: {}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">65</td>
+              <td class="test-title">Sift-Filter 46: {}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">66</td>
+              <td class="test-title">Sift-Filter 47: {}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">67</td>
+              <td class="test-title">Sift-Filter 48: {&quot;$all&quot;:[1,2,3]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">68</td>
+              <td class="test-title">Sift-Filter 49: {&quot;$all&quot;:[0,false]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">69</td>
+              <td class="test-title">Sift-Filter 50: {&quot;$all&quot;:[&quot;1&quot;]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">70</td>
+              <td class="test-title">Sift-Filter 51: {&quot;$all&quot;:[&quot;1970-01-01T00:00:00.001Z&quot;,&quot;1970-01-01T00:00:00.002Z&quot;]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">71</td>
+              <td class="test-title">Sift-Filter 52: {&quot;$size&quot;:3}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">72</td>
+              <td class="test-title">Sift-Filter 53: {&quot;$size&quot;:1}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">73</td>
+              <td class="test-title">Sift-Filter 54: {&quot;$or&quot;:[1,2,3]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">74</td>
+              <td class="test-title">Sift-Filter 55: {&quot;$or&quot;:[{&quot;$ne&quot;:1},2]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">75</td>
+              <td class="test-title">Sift-Filter 56: {&quot;$nor&quot;:[1,2,3]}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">76</td>
+              <td class="test-title">Sift-Filter 57: {&quot;$nor&quot;:[{&quot;$ne&quot;:1},2]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">77</td>
+              <td class="test-title">Sift-Filter 58: {&quot;$and&quot;:[{&quot;$gt&quot;:1},{&quot;$lt&quot;:4}]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">78</td>
+              <td class="test-title">Sift-Filter 59: {&quot;$regex&quot;:&quot;^a&quot;}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">79</td>
+              <td class="test-title">Sift-Filter 60: {&quot;a&quot;:{&quot;$regex&quot;:&quot;b|c&quot;}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">80</td>
+              <td class="test-title">Sift-Filter 61: {&quot;folder&quot;:{&quot;$regex&quot;:&quot;^[0-9]{4}$&quot;}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">81</td>
+              <td class="test-title">Sift-Filter 62: {&quot;$regex&quot;:&quot;^a&quot;,&quot;$options&quot;:&quot;i&quot;}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">82</td>
+              <td class="test-title">Sift-Filter 63: {&quot;text&quot;:{&quot;$regex&quot;:&quot;.*lis.*&quot;,&quot;$options&quot;:&quot;i&quot;}}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">83</td>
+              <td class="test-title">Sift-Filter 64: {&quot;$regex&quot;:&quot;a&quot;}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">84</td>
+              <td class="test-title">Sift-Filter 65: {}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">85</td>
+              <td class="test-title">Sift-Filter 66: {}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">86</td>
+              <td class="test-title">Sift-Filter 67: {}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">87</td>
+              <td class="test-title">Sift-Filter 68: {&quot;$where&quot;:&quot;this.v &#x3D;&#x3D;&#x3D; 1&quot;}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">88</td>
+              <td class="test-title">Sift-Filter 69: {&quot;$where&quot;:&quot;obj.v &#x3D;&#x3D;&#x3D; 1&quot;}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">89</td>
+              <td class="test-title">Sift-Filter 70: {&quot;a&quot;:{&quot;$elemMatch&quot;:{&quot;b&quot;:1,&quot;c&quot;:2}}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">90</td>
+              <td class="test-title">Sift-Filter 71: {&quot;a&quot;:{&quot;$elemMatch&quot;:{&quot;b&quot;:2,&quot;c&quot;:{&quot;$gt&quot;:2}}}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">91</td>
+              <td class="test-title">Sift-Filter 72: {&quot;a.b&quot;:{}}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">92</td>
+              <td class="test-title">Sift-Filter 73: {&quot;foo.0&quot;:&quot;baz&quot;}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift-Filter success">
+              <td class="test-id">93</td>
+              <td class="test-title">Sift-Filter 74: {&quot;foo.0.name&quot;:&quot;baz&quot;}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">94</td>
+              <td class="test-title">Sift 0: {&quot;$eq&quot;:5}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">95</td>
+              <td class="test-title">Sift 1: &quot;5&quot;
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">96</td>
+              <td class="test-title">Sift 2: false
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">97</td>
+              <td class="test-title">Sift 3: true
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">98</td>
+              <td class="test-title">Sift 4: 0
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">99</td>
+              <td class="test-title">Sift 5: null
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">100</td>
+              <td class="test-title">Sift 6: undefined
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">101</td>
+              <td class="test-title">Sift 7: 1
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">102</td>
+              <td class="test-title">Sift 8: 1
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">103</td>
+              <td class="test-title">Sift 9: &quot;1970-01-01T00:00:00.001Z&quot;
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">104</td>
+              <td class="test-title">Sift 10: {}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">105</td>
+              <td class="test-title">Sift 11: {&quot;$ne&quot;:5}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">106</td>
+              <td class="test-title">Sift 12: {&quot;$ne&quot;:&quot;5&quot;}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">107</td>
+              <td class="test-title">Sift 13: {&quot;$ne&quot;:false}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">108</td>
+              <td class="test-title">Sift 14: {}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">109</td>
+              <td class="test-title">Sift 15: {&quot;$ne&quot;:{}}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">110</td>
+              <td class="test-title">Sift 16: {&quot;$ne&quot;:1}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">111</td>
+              <td class="test-title">Sift 17: {&quot;groups&quot;:{&quot;$ne&quot;:111}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">112</td>
+              <td class="test-title">Sift 18: {&quot;$lt&quot;:5}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">113</td>
+              <td class="test-title">Sift 19: {&quot;$lt&quot;:&quot;c&quot;}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">114</td>
+              <td class="test-title">Sift 20: {&quot;$lt&quot;:null}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">115</td>
+              <td class="test-title">Sift 21: {&quot;$lt&quot;:&quot;1970-01-01T00:00:00.003Z&quot;}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">116</td>
+              <td class="test-title">Sift 22: {&quot;$lte&quot;:5}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">117</td>
+              <td class="test-title">Sift 23: {&quot;groups&quot;:{&quot;$lt&quot;:5}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">118</td>
+              <td class="test-title">Sift 24: {&quot;$gt&quot;:5}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">119</td>
+              <td class="test-title">Sift 25: {&quot;$gt&quot;:null}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">120</td>
+              <td class="test-title">Sift 26: {&quot;groups&quot;:{&quot;$gt&quot;:5}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">121</td>
+              <td class="test-title">Sift 27: {&quot;$gte&quot;:5}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">122</td>
+              <td class="test-title">Sift 28: {&quot;groups&quot;:{&quot;$gte&quot;:5}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">123</td>
+              <td class="test-title">Sift 29: {&quot;$mod&quot;:[2,1]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">124</td>
+              <td class="test-title">Sift 30: {&quot;groups&quot;:{&quot;$mod&quot;:[2,0]}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">125</td>
+              <td class="test-title">Sift 31: {&quot;$exists&quot;:false}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">126</td>
+              <td class="test-title">Sift 32: {&quot;$exists&quot;:true}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">127</td>
+              <td class="test-title">Sift 33: {&quot;$in&quot;:[0,false,1,&quot;1&quot;]}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">128</td>
+              <td class="test-title">Sift 34: {&quot;$in&quot;:[1,&quot;1&quot;,&quot;2&quot;]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">129</td>
+              <td class="test-title">Sift 35: {&quot;$in&quot;:[&quot;1970-01-01T00:00:00.001Z&quot;]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">130</td>
+              <td class="test-title">Sift 36: {&quot;a.b.status&quot;:{&quot;$in&quot;:[0]}}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">131</td>
+              <td class="test-title">Sift 37: {&quot;a.b.status&quot;:{&quot;$in&quot;:[0,2]}}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">132</td>
+              <td class="test-title">Sift 38: {&quot;$nin&quot;:[0,false,1,&quot;1&quot;]}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">133</td>
+              <td class="test-title">Sift 39: {&quot;$nin&quot;:[1,&quot;1&quot;,&quot;2&quot;]}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">134</td>
+              <td class="test-title">Sift 40: {&quot;$nin&quot;:[&quot;1970-01-01T00:00:00.001Z&quot;]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">135</td>
+              <td class="test-title">Sift 41: {&quot;$not&quot;:false}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">136</td>
+              <td class="test-title">Sift 42: {&quot;$not&quot;:0}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">137</td>
+              <td class="test-title">Sift 43: {&quot;$not&quot;:{&quot;$in&quot;:[1,2,3]}}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">138</td>
+              <td class="test-title">Sift 44: {}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">139</td>
+              <td class="test-title">Sift 45: {}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">140</td>
+              <td class="test-title">Sift 46: {}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">141</td>
+              <td class="test-title">Sift 47: {}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">142</td>
+              <td class="test-title">Sift 48: {&quot;$all&quot;:[1,2,3]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">143</td>
+              <td class="test-title">Sift 49: {&quot;$all&quot;:[0,false]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">144</td>
+              <td class="test-title">Sift 50: {&quot;$all&quot;:[&quot;1&quot;]}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">145</td>
+              <td class="test-title">Sift 51: {&quot;$all&quot;:[&quot;1970-01-01T00:00:00.001Z&quot;,&quot;1970-01-01T00:00:00.002Z&quot;]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">146</td>
+              <td class="test-title">Sift 52: {&quot;$size&quot;:3}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">147</td>
+              <td class="test-title">Sift 53: {&quot;$size&quot;:1}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">148</td>
+              <td class="test-title">Sift 54: {&quot;$or&quot;:[1,2,3]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">149</td>
+              <td class="test-title">Sift 55: {&quot;$or&quot;:[{&quot;$ne&quot;:1},2]}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">150</td>
+              <td class="test-title">Sift 56: {&quot;$nor&quot;:[1,2,3]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">151</td>
+              <td class="test-title">Sift 57: {&quot;$nor&quot;:[{&quot;$ne&quot;:1},2]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">152</td>
+              <td class="test-title">Sift 58: {&quot;$and&quot;:[{&quot;$gt&quot;:1},{&quot;$lt&quot;:4}]}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">153</td>
+              <td class="test-title">Sift 59: {&quot;$regex&quot;:&quot;^a&quot;}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">154</td>
+              <td class="test-title">Sift 60: {&quot;a&quot;:{&quot;$regex&quot;:&quot;b|c&quot;}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">155</td>
+              <td class="test-title">Sift 61: {&quot;folder&quot;:{&quot;$regex&quot;:&quot;^[0-9]{4}$&quot;}}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">156</td>
+              <td class="test-title">Sift 62: {&quot;$regex&quot;:&quot;^a&quot;,&quot;$options&quot;:&quot;i&quot;}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">157</td>
+              <td class="test-title">Sift 63: {&quot;text&quot;:{&quot;$regex&quot;:&quot;.*lis.*&quot;,&quot;$options&quot;:&quot;i&quot;}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">158</td>
+              <td class="test-title">Sift 64: {&quot;$regex&quot;:&quot;a&quot;}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">159</td>
+              <td class="test-title">Sift 65: {}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">160</td>
+              <td class="test-title">Sift 66: {}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">161</td>
+              <td class="test-title">Sift 67: {}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">162</td>
+              <td class="test-title">Sift 68: {&quot;$where&quot;:&quot;this.v &#x3D;&#x3D;&#x3D; 1&quot;}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">163</td>
+              <td class="test-title">Sift 69: {&quot;$where&quot;:&quot;obj.v &#x3D;&#x3D;&#x3D; 1&quot;}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">164</td>
+              <td class="test-title">Sift 70: {&quot;a&quot;:{&quot;$elemMatch&quot;:{&quot;b&quot;:1,&quot;c&quot;:2}}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">165</td>
+              <td class="test-title">Sift 71: {&quot;a&quot;:{&quot;$elemMatch&quot;:{&quot;b&quot;:2,&quot;c&quot;:{&quot;$gt&quot;:2}}}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">166</td>
+              <td class="test-title">Sift 72: {&quot;a.b&quot;:{}}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">167</td>
+              <td class="test-title">Sift 73: {&quot;foo.0&quot;:&quot;baz&quot;}
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Sift success">
+              <td class="test-id">168</td>
+              <td class="test-title">Sift 74: {&quot;foo.0.name&quot;:&quot;baz&quot;}
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          </tbody>
+      </table>
+    
+    </div>    <div id="coverage">
+        <h1>Code Coverage Report</h1>
+        <div class="stats high">
+            <div class="percentage">99.04%</div>
+            <div class="sloc">311</div>
+            <div class="hits">308</div>
+            <div class="misses">3</div>
+        </div>
+        <div id="files">
+            <div class="file">
+                <h2 id="index.js">index.js</h2>
+                <div class="stats high">
+                    <div class="percentage">100%</div>
+                    <div class="sloc">5</div>
+                    <div class="hits">5</div>
+                    <div class="misses">0</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Lint</th>
+                            <th>Hits</th>
+                            <th>Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>1</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">module.exports &#x3D; {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>2</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  Parser: require(&#x27;./lib/parser&#x27;),</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>3</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  matches: require(&#x27;./lib/matches&#x27;),</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>4</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  filter: require(&#x27;./lib/filter&#x27;),</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>5</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>6</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="file">
+                <h2 id="lib/curry.js">lib/curry.js</h2>
+                <div class="stats high">
+                    <div class="percentage">100%</div>
+                    <div class="sloc">2</div>
+                    <div class="hits">2</div>
+                    <div class="misses">0</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Lint</th>
+                            <th>Hits</th>
+                            <th>Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>1</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const curry &#x3D; (fn, ...args1)&#x3D;&gt;(...args2)&#x3D;&gt;fn(...args1, ...args2);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>2</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>3</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">module.exports &#x3D; curry;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>4</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="file">
+                <h2 id="lib/filter.js">lib/filter.js</h2>
+                <div class="stats medium">
+                    <div class="percentage">72.73%</div>
+                    <div class="sloc">11</div>
+                    <div class="hits">8</div>
+                    <div class="misses">3</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Lint</th>
+                            <th>Hits</th>
+                            <th>Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>1</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const matches &#x3D; require(&#x27;./matches&#x27;);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>2</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const curry &#x3D; require(&#x27;./curry&#x27;);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>3</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>4</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const filter &#x3D; (pattern, ...args)&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>5</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  const matcher &#x3D; matches(pattern);</td>
+                        </tr>
+                            <tr class="chunks">
+                                <td class="line" data-tooltip>6</td>
+                                <td class="lint empty"></td>
+                                <td class="hits" data-tooltip></td>
+                                <td class="source"><div>  if(</div><div class="miss true" data-tooltip>args.length &gt; 0</div><div>){</div></td>
+                            </tr>
+                            <tr class="chunks">
+                                <td class="line" data-tooltip>7</td>
+                                <td class="lint empty"></td>
+                                <td class="hits" data-tooltip></td>
+                                <td class="source"><div>    const arr &#x3D; </div><div class="miss true" data-tooltip>Array.isArray(args[0])</div><div>?args[0]:</div><div class="miss never" data-tooltip>[args[0]]</div><div>;</div></td>
+                            </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>8</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>75</td>
+                            <td class="source">    return arr.filter(matcher);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>9</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                            <tr class="miss">
+                                <td class="line" data-tooltip>10</td>
+                                <td class="lint empty"></td>
+                                <td class="hits" data-tooltip></td>
+                                <td class="source" data-tooltip>  return (arr)&#x3D;&gt;Array.isArray(arr)?arr.filter(matcher):[arr].filter(matcher);</td>
+                            </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>11</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>12</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>13</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">module.exports &#x3D; filter;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>14</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="file">
+                <h2 id="lib/matches.js">lib/matches.js</h2>
+                <div class="stats high">
+                    <div class="percentage">100%</div>
+                    <div class="sloc">15</div>
+                    <div class="hits">15</div>
+                    <div class="misses">0</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Lint</th>
+                            <th>Hits</th>
+                            <th>Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>1</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>2</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  parse,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>3</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">} &#x3D; require(&#x27;./parser&#x27;);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>4</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>5</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  validate,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>6</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">} &#x3D; require(&#x27;./utils&#x27;);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>7</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const curry &#x3D; require(&#x27;./curry&#x27;);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>8</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>9</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const matches &#x3D; (pattern, ...args)&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>10</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  const tree &#x3D; parse(pattern);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>11</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>168</td>
+                            <td class="source">  if(args.length &gt; 0){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>12</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>14</td>
+                            <td class="source">    return validate(tree, args[0]);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>13</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>14</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>154</td>
+                            <td class="source">  return curry(validate, tree);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>15</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>16</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>17</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">module.exports &#x3D; matches;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>18</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="file">
+                <h2 id="lib/operators.js">lib/operators.js</h2>
+                <div class="stats high">
+                    <div class="percentage">100%</div>
+                    <div class="sloc">79</div>
+                    <div class="hits">79</div>
+                    <div class="misses">0</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Lint</th>
+                            <th>Hits</th>
+                            <th>Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>1</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>2</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  compare,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>3</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  comparable,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>4</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  search,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>5</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  validate,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>6</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  and,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>7</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  or,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>8</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  isString,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>9</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">} &#x3D; require(&#x27;./utils&#x27;);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>10</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>11</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const OPERATORS &#x3D; {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>12</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $eq: or((a, b)&#x3D;&gt;a(b)),</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>13</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>14</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $ne: and((a, b)&#x3D;&gt;!a(b)),</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>15</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>16</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $or(a, b){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>17</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return a.find((elem)&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>18</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">      return validate(elem, b);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>19</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    })!&#x3D;&#x3D;undefined;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>20</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>21</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>22</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $gt: or((a, b)&#x3D;&gt;compare(comparable(b), a)&gt;0),</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>23</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>24</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $gte: or((a, b)&#x3D;&gt;compare(comparable(b), a)&gt;&#x3D;0),</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>25</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>26</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $lt: or((a, b)&#x3D;&gt;compare(comparable(b), a)&lt;0),</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>27</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>28</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $lte: or((a, b)&#x3D;&gt;compare(comparable(b), a)&lt;&#x3D;0),</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>29</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>30</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $mod: or((a, b)&#x3D;&gt;b%a[0] &#x3D;&#x3D; a[1]),</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>31</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>32</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $in(a, b){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>33</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    if(Array.isArray(b)){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>34</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>8</td>
+                            <td class="source">      return b.find((elem)&#x3D;&gt;~a.indexOf(comparable(elem)))!&#x3D;&#x3D;undefined;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>35</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>36</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>56</td>
+                            <td class="source">    return !!~a.indexOf(comparable(b));</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>37</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>38</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>39</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $nin(a, b){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>40</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return !OPERATORS.$in(a, b);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>41</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>42</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>43</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $not(a, b){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>44</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return !validate(a, b);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>45</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>46</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>47</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $type(a, b){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>48</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return b!&#x3D;void(0)?b instanceof a || b.constructor &#x3D;&#x3D; a : false;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>49</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>50</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>51</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $all(a, b){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>52</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    if(!b){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>53</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>2</td>
+                            <td class="source">      b &#x3D; [];</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>54</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>55</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>18</td>
+                            <td class="source">    return a.every((elem)&#x3D;&gt;comparable(b).indexOf(elem)&gt;-1);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>56</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>57</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>58</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $size(a, b){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>59</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return b ? a &#x3D;&#x3D;&#x3D; b.length : false;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>60</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>61</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>62</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $nor(a, b){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>63</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    //return !OPERATORS.$in(a, b);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>64</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    for(let i &#x3D; 0, n &#x3D; a.length; i&lt;n; i++){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>65</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>32</td>
+                            <td class="source">      if(validate(a[i], b)){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>66</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>16</td>
+                            <td class="source">        return false;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>67</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">      }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>68</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>69</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>4</td>
+                            <td class="source">    return true;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>70</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>71</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>72</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $and(a, b){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>73</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return a.every((elem)&#x3D;&gt;validate(elem, b));</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>74</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>75</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>76</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $regex: or((a, b)&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>77</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">      return isString(b) &amp;&amp; a.test(b);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>78</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    }),</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>79</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>80</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $where(a, b){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>81</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return a.call(b, b);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>82</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>83</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>84</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $elemMatch(a, b){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>85</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    if(Array.isArray(b)){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>86</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>4</td>
+                            <td class="source">      return search(b, a)!&#x3D;&#x3D;-1;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>87</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>88</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>8</td>
+                            <td class="source">    return validate(a, b);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>89</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>90</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>91</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $exists(a, b){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>92</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return (b !&#x3D; void 0) &#x3D;&#x3D;&#x3D; a;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>93</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>94</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>95</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>96</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">module.exports &#x3D; {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>97</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  and,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>98</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  or,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>99</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  OPERATORS,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>100</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>101</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="file">
+                <h2 id="lib/parser.js">lib/parser.js</h2>
+                <div class="stats high">
+                    <div class="percentage">100%</div>
+                    <div class="sloc">68</div>
+                    <div class="hits">68</div>
+                    <div class="misses">0</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Lint</th>
+                            <th>Hits</th>
+                            <th>Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>1</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>2</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  isFunction,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>3</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  comparable,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>4</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  search,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>5</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  validate,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>6</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  findValues,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>7</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">} &#x3D; require(&#x27;./utils&#x27;);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>8</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>9</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  OPERATORS,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>10</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">} &#x3D; require(&#x27;./operators&#x27;);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>11</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>12</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  PREPARERS,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>13</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">} &#x3D; require(&#x27;./preparers&#x27;);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>14</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>15</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const getQuery &#x3D; (query)&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>16</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  const cQuery &#x3D; comparable(query);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>17</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>252</td>
+                            <td class="source">  if (!cQuery || (cQuery.constructor.toString().replace(/\n/g,&#x27;&#x27;).replace(/ /g, &#x27;&#x27;) !&#x3D;&#x3D; &#x27;functionObject(){[nativecode]}&#x27;)) { // cross browser support</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>18</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>66</td>
+                            <td class="source">    return { $eq: cQuery };</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>19</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>20</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>186</td>
+                            <td class="source">  return cQuery;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>21</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>22</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>23</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const createValidator &#x3D; (a, validate)&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>24</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  return {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>25</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    a,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>26</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    validate</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>27</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  };</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>28</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>29</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>30</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const nestedValidator &#x3D; (a, b)&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>31</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  const values &#x3D; findValues(b, a.k, 0);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>32</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>96</td>
+                            <td class="source">  if(values.length &#x3D;&#x3D;&#x3D; 1){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>33</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>95</td>
+                            <td class="source">    return validate(a.nv, values[0]);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>34</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>35</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">  return !!~search(values, a.nv);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>36</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>37</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>38</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const createNestedValidator &#x3D; (path, a)&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>39</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  return {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>40</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    a: {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>41</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">      k: path,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>42</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">      nv: a</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>43</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>44</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    validate: nestedValidator</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>45</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>46</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>47</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>48</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const getValidator &#x3D; ({key, value, query, parse})&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>49</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  if(key &#x3D;&#x3D;&#x3D; &#x27;$options&#x27;){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>50</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>4</td>
+                            <td class="source">    return false;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>51</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>52</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>255</td>
+                            <td class="source">  if(OPERATORS[key]){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>53</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>205</td>
+                            <td class="source">    if(PREPARERS[key]){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>54</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>134</td>
+                            <td class="source">      const prepared &#x3D; PREPARERS[key](value, {query, parse});</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>55</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>134</td>
+                            <td class="source">      return createValidator(comparable(prepared), OPERATORS[key]);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>56</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>57</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>71</td>
+                            <td class="source">    return createValidator(comparable(value), OPERATORS[key]);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>58</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>59</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>50</td>
+                            <td class="source">  if(key.charCodeAt(0)&#x3D;&#x3D;&#x3D;36){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>60</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">    throw new Error(&#x60;Unkonwn operation ${key}&#x60;);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>61</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>62</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>49</td>
+                            <td class="source">  return createNestedValidator(key.split(&#x27;.&#x27;), parse(value));</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>63</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>64</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>65</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const parse &#x3D; (query)&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>66</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  const cQuery &#x3D; getQuery(query);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>67</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>68</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>252</td>
+                            <td class="source">  const validators &#x3D; Object.keys(cQuery)</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>69</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">      .map((key)&#x3D;&gt;getValidator({key, value: cQuery[key], query: cQuery, parse}))</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>70</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">      .filter((v)&#x3D;&gt;v!&#x3D;&#x3D;false);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>71</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>72</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>251</td>
+                            <td class="source">  return validators.length &#x3D;&#x3D;&#x3D; 1?validators[0] : createValidator(validators, OPERATORS.$and);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>73</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>74</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>75</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">module.exports &#x3D; {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>76</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  parse,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>77</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>78</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="file">
+                <h2 id="lib/preparers.js">lib/preparers.js</h2>
+                <div class="stats high">
+                    <div class="percentage">100%</div>
+                    <div class="sloc">52</div>
+                    <div class="hits">52</div>
+                    <div class="misses">0</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Lint</th>
+                            <th>Hits</th>
+                            <th>Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>1</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>2</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  compare,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>3</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  comparable,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>4</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  isString,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>5</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">} &#x3D; require(&#x27;./utils&#x27;);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>6</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>7</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const PREPARERS &#x3D; {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>8</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $eq(a){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>9</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    if(a instanceof RegExp){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>10</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>12</td>
+                            <td class="source">      return (b)&#x3D;&gt;typeof(b)&#x3D;&#x3D;&#x3D;&#x27;string&#x27; &amp;&amp; a.test(b);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>11</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>12</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>80</td>
+                            <td class="source">    if(a instanceof Function){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>13</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">      return a;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>14</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>15</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>79</td>
+                            <td class="source">    if(Array.isArray(a) &amp;&amp; !a.length){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>16</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>2</td>
+                            <td class="source">      return (b)&#x3D;&gt;Array.isArray(b) &amp;&amp; !b.length;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>17</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>18</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>77</td>
+                            <td class="source">    if(a &#x3D;&#x3D;&#x3D; null){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>19</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>5</td>
+                            <td class="source">      return (b)&#x3D;&gt;b &#x3D;&#x3D; null;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>20</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>21</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>72</td>
+                            <td class="source">    return (b)&#x3D;&gt;compare(comparable(b), a)&#x3D;&#x3D;&#x3D;0;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>22</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>23</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>24</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $ne(a){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>25</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return PREPARERS.$eq(a);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>26</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>27</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>28</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $and(a, {parse}){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>29</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return a.map(parse);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>30</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>31</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>32</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $or(a, {parse}){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>33</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return a.map(parse);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>34</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>35</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>36</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $nor(a, {parse}){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>37</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return a.map(parse);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>38</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>39</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>40</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $not(a, {parse}){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>41</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return parse(a);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>42</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>43</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>44</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $regex(a, {query}){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>45</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return new RegExp(a, query.$options);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>46</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>47</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>48</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $where(a){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>49</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return isString(a)?new Function(&#x27;obj&#x27;, &#x60;return ${a}&#x60;):a;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>50</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>51</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>52</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $elemMatch(a, {parse}){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>53</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return parse(a);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>54</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>55</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>56</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  $exists(a){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>57</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    return !!a;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>58</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  },</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>59</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>60</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>61</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">module.exports &#x3D; {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>62</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  PREPARERS,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>63</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>64</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="file">
+                <h2 id="lib/utils.js">lib/utils.js</h2>
+                <div class="stats high">
+                    <div class="percentage">100%</div>
+                    <div class="sloc">79</div>
+                    <div class="hits">79</div>
+                    <div class="misses">0</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Lint</th>
+                            <th>Hits</th>
+                            <th>Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>1</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const curry &#x3D; require(&#x27;./curry&#x27;);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>2</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>3</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const isType &#x3D; (type, val)&#x3D;&gt;typeof(val)&#x3D;&#x3D;&#x3D;type;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>4</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>5</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const isFunction &#x3D; curry(isType, &#x27;function&#x27;);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>6</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const isString &#x3D; curry(isType, &#x27;string&#x27;);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>7</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>8</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const compare &#x3D; (a, b)&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>9</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  if(a &#x3D;&#x3D;&#x3D; b){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>10</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>84</td>
+                            <td class="source">    return 0;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>11</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>12</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>206</td>
+                            <td class="source">  if(typeof(a) &#x3D;&#x3D;&#x3D; typeof(b)){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>13</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>167</td>
+                            <td class="source">    return (a &gt; b)?1:-1;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>14</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>15</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>16</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>17</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const comparable &#x3D; (value)&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>18</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  if(value instanceof Date){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>19</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>46</td>
+                            <td class="source">    return value.getTime();</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>20</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>21</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>974</td>
+                            <td class="source">  if(Array.isArray(value)){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>22</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>75</td>
+                            <td class="source">    return value.map(comparable);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>23</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>24</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>899</td>
+                            <td class="source">  return value;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>25</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>26</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>27</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const search &#x3D; (arr, validator)&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>28</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  return arr.findIndex((item)&#x3D;&gt;validate(validator, item));</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>29</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>30</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>31</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const validate &#x3D; (validator, b)&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>32</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  return validator.validate(validator.a, b);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>33</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>34</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>35</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const get &#x3D; (obj, key)&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>36</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  if(isFunction(obj.get)){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>37</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">    return obj.get(key);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>38</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>39</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>195</td>
+                            <td class="source">  return obj[key];</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>40</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>41</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>42</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const or &#x3D; (predicate)&#x3D;&gt;(a, b)&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>43</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  if(!Array.isArray(b)){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>44</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>300</td>
+                            <td class="source">    return predicate(a, b);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>45</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>46</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>31</td>
+                            <td class="source">  for(let i &#x3D; 0, n &#x3D; b.length; i&lt;n; i++){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>47</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>51</td>
+                            <td class="source">    if(predicate(a, get(b, i))){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>48</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>21</td>
+                            <td class="source">      return true;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>49</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>50</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>51</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>10</td>
+                            <td class="source">  return false;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>52</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>53</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>54</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const and &#x3D; (predicate)&#x3D;&gt;(a, b)&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>55</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  if(!Array.isArray(b) || !b.length){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>56</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>57</td>
+                            <td class="source">    return predicate(a, b);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>57</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>58</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>8</td>
+                            <td class="source">  for(let i &#x3D; 0, n &#x3D; b.length; i&lt;n; i++){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>59</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>12</td>
+                            <td class="source">    if(!predicate(a, get(b, i))){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>60</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>4</td>
+                            <td class="source">      return false;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>61</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">    }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>62</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>63</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>4</td>
+                            <td class="source">  return true;</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>64</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>65</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>66</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">const findValues &#x3D; (current, path, index, values &#x3D; [])&#x3D;&gt;{</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>67</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  if(index &#x3D;&#x3D;&#x3D; path.length || current &#x3D;&#x3D; void 0){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>68</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>97</td>
+                            <td class="source">    return [...values, current];</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>69</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>70</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>144</td>
+                            <td class="source">  const key &#x3D; path[index];</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>71</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>72</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>144</td>
+                            <td class="source">  if(Array.isArray(current) &amp;&amp; isNaN(Number(key))){</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>73</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>11</td>
+                            <td class="source">    return [...values, ...current.map((item)&#x3D;&gt;findValues(item, path, index, values)).filter((v)&#x3D;&gt;v !&#x3D;&#x3D; void 0)];</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>74</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  }</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>75</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>133</td>
+                            <td class="source">  return findValues(get(current, key), path, index+1, values);</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>76</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>77</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>78</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip>1</td>
+                            <td class="source">module.exports &#x3D; {</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>79</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  get,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>80</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  curry,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>81</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  isType,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>82</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  isFunction,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>83</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  isString,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>84</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  compare,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>85</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  comparable,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>86</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  search,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>87</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  validate,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>88</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  and,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>89</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  or,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>90</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">  findValues,</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>91</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source">};</td>
+                        </tr>
+                        <tr class="hit">
+                            <td class="line" data-tooltip>92</td>
+                            <td class="lint empty"></td>
+                            <td class="hits" data-tooltip></td>
+                            <td class="source"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>    <div id="linting">
+        <h1>Linting Report</h1>
+            <span>Nothing to show here, linting is disabled.</span>
+    </div>  </body>
+</html>

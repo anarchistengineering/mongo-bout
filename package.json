@@ -1,0 +1,23 @@
+{
+  "name": "mongo-bout",
+  "version": "0.0.1",
+  "description": "Implements just the matcher part for MongoDB queries",
+  "main": "index.js",
+  "scripts": {
+    "test": "lab",
+    "coverage": "lab --coverage --output reports/coverage.html --reporter html",
+    "dev-test": "nodemon ./node_modules/.bin/lab"
+  },
+  "keywords": [
+    "MongoDB",
+    "Query",
+    "Matcher"
+  ],
+  "author": "Anarchist Engineer <jeremy.darling@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "code": "^4.0.0",
+    "lab": "^11.1.0",
+    "nodemon": "^1.10.2"
+  }
+}
