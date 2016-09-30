@@ -1,6 +1,6 @@
 {
   "name": "mongo-bout",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Implements just the matcher part for MongoDB queries",
   "main": "index.js",
   "scripts": {
