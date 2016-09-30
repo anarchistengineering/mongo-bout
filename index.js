@@ -1,5 +1,14 @@
+const {
+  Bout,
+  matches,
+  filter,
+} = require('./lib/bout');
+
 module.exports = {
+  curry: require('./lib/curry'),
+  utils: require('./lib/utils'),
   Parser: require('./lib/parser'),
-  matches: require('./lib/matches'),
-  filter: require('./lib/filter'),
+  Bout,
+  matches,
+  filter,
 };

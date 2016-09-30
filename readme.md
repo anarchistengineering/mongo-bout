@@ -68,6 +68,20 @@ console.log(filter({a: 1}, [{a: 1}, {b: 2}])); // -> [ { a: 1 } ]
 console.log(filter({a: 1}, [{a: 2}, {b: 2}])); // -> []
 ```
 
+To create a new instance with custom operations:
+
+```js
+const b = new Bout({
+    operators: {
+      $boo(a, b){
+        return a===b;
+      }
+    }
+  });
+const out = b.filter({foo: {$boo: 2}}, [{foo: 2}, {foo: 1}]);
+console.log(out); // -> [{foo: 2}]
+```
+
 ## Supported Operators:
 
 **NOTE:** This section is copy/pasted directly from the sift readme.  At this level they are interchangeable.
@@ -316,8 +330,3 @@ Not expression:
 filter({$not:{$in:['craig','tim']}}, ['craig','tim','jake']); //['jake']
 filter({$not:{$size:5}}, ['craig','tim','jake']); //['tim','jake']
 ```
-
-TODO
----
-
- * Implement custom operations

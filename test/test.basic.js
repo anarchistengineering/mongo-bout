@@ -7,7 +7,9 @@ const it = lab.it;
 const expect = Code.expect;
 
 const {
+  Bout,
   matches,
+  utils,
 } = require('../');
 
 describe('Basic', ()=>{
@@ -18,6 +20,41 @@ describe('Basic', ()=>{
       expect(e.message).to.equal('Unkonwn operation $aaa');
       done();
     }
+  });
+
+  it('allows overriding existing operators', (done)=>{
+    const b = new Bout({
+        operators: {
+          $mod(a, b){
+            const fields = Object.keys(a);
+            const res = fields.reduce((curr, key)=>{
+              const value = b[key];
+              const by = a[key];
+              if((!isNaN(parseInt(value))) && curr){
+                return value%by === 0;
+              }
+              return false;
+            }, true);
+            return res;
+          }
+        }
+      });
+    const out = b.filter({$mod: {foo: 2}}, [{foo: 2}, {foo: 1}]);
+    expect(out).to.be.an.array().and.to.equal([{foo: 2}]);
+    done();
+  });
+
+  it('works with custom operations', (done)=>{
+    const b = new Bout({
+        operators: {
+          $boo(a, b){
+            return a===b;
+          }
+        }
+      });
+    const out = b.filter({foo: {$boo: 2}}, [{foo: 2}, {foo: 1}]);
+    expect(out).to.be.an.array().and.to.equal([{foo: 2}]);
+    done();
   });
 
   it('returns a valid matcher if not passed something to compare against', (done)=>{
