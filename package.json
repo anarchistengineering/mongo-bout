@@ -19,5 +19,17 @@
     "code": "^4.0.0",
     "lab": "^11.1.0",
     "nodemon": "^1.10.2"
-  }
+  },
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anarchistengineering/mongo-bout.git"
+  },
+  "bugs": {
+    "url": "https://github.com/anarchistengineering/mongo-bout/issues"
+  },
+  "homepage": "https://github.com/anarchistengineering/mongo-bout#readme"
 }
